@@ -1,0 +1,5 @@
+Patient Name,Date of Birth,Provider,Clinical Description,Service Date,CPT Code,Result
+John Smith,01/02/1960,Dr Adams,Hemoglobin A1C,06/14/2028,83036,7.1
+Mary Jones,03/14/1958,Dr Adams,Colonoscopy,04/22/2026,45378,Normal
+Robert Davis,11/05/1962,Dr Brown,Diabetic Eye Exam,05/10/2026,92004,Completed
+Lisa Brown,07/18/1955,Dr Brown,HbA1c,05/11/2026,83036,6.8

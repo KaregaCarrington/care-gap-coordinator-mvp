@@ -1,0 +1,37 @@
+{
+  "rulesVersion": "0.1-test",
+  "warning": "SYNTHETIC TEST RULES ONLY. Replace with verified payer/HEDIS specifications before production use.",
+  "measures": {
+    "A1C": {
+      "label": "A1C",
+      "lookbackDays": 365,
+      "evidenceTerms": [
+        "a1c",
+        "hba1c",
+        "hemoglobin a1c"
+      ],
+      "noteTemplate": "A1C completed {date}"
+    },
+    "Colorectal": {
+      "label": "Colorectal Screening",
+      "lookbackDays": 3650,
+      "evidenceTerms": [
+        "colonoscopy",
+        "fit",
+        "cologuard",
+        "stool test"
+      ],
+      "noteTemplate": "Colorectal screening completed {date}"
+    },
+    "Eye Exam": {
+      "label": "Diabetic Eye Exam",
+      "lookbackDays": 365,
+      "evidenceTerms": [
+        "eye exam",
+        "retinal exam",
+        "diabetic eye"
+      ],
+      "noteTemplate": "Eye exam completed {date}"
+    }
+  }
+}

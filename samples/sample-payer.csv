@@ -1,0 +1,7 @@
+Member ID,Member Name,DOB,Provider,Measure,Compliance,Insurance,Region
+1001,John Smith,01/02/1960,Dr Adams,A1C,0,Example Health,West
+1002,Mary Jones,03/14/1958,Dr Adams,Colorectal,0,Example Health,West
+1003,Robert Davis,11/05/1962,Dr Brown,Eye Exam,0,Example Health,North
+1004,Lisa Brown,07/18/1955,Dr Brown,A1C,0,Example Health,North
+1005,James Wilson,04/09/1961,Dr Brown,Colorectal,0,Example Health,North
+1006,Closed Patient,01/01/1960,Dr Adams,A1C,1,Example Health,West
