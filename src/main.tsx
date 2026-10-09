@@ -1,79 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import * as XLSX from "xlsx";
 import ExcelJS from "exceljs";
 import "./styles.css";
+import { norm, dateVal } from "./review/reviewUtils";
+import type { Row, Rule } from "./review/reviewUtils";
+import { findMatchingPatient, findEvidence, evaluateEvidence } from "./review/reviewEngine";
+import * as XLSX from "xlsx";
 
-type Row = Record<string, any>;
-type Rule = any;
-const norm = (v: any) =>
-  String(v ?? "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "");
-const dateVal = (v: any) => {
-  if (v instanceof Date) return v;
-  if (typeof v === "number") {
-    const d = XLSX.SSF.parse_date_code(v);
-    return d ? new Date(d.y, d.m - 1, d.d) : null;
-  }
-  const s = String(v ?? "").trim();
-  if (!s) return null;
-  const d = new Date(s);
-  return isNaN(d.getTime()) ? null : d;
-};
-const fmt = (d: Date) =>
-  `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}/${d.getFullYear()}`;
-
-function findMatchingPatient(
-  payerRow: Row,
-  emr: Row[],
-  mapping: any,
-  nameKey: string,
-  dobKey: string,
-) {
-  const payerName = norm(payerRow[nameKey]);
-  const payerDob = dateVal(payerRow[dobKey]);
-
-  return emr.find((e: Row) => {
-    const emrName = norm(e[mapping.name]);
-    const emrDob = dateVal(e[mapping.dob]);
-
-    return (
-      emrName === payerName &&
-      (!payerDob ||
-        !emrDob ||
-        emrDob.toDateString() === payerDob.toDateString())
-    );
-  });
-}
-
-function findEvidence(
-  emr: Row[],
-  patientName: string,
-  mapping: any,
-  rule: Rule | undefined
-) {
-  return emr
-    .filter((e: Row) => norm(e[mapping.name]) === patientName)
-    .map((e: Row) => ({
-      e,
-      date: dateVal(e[mapping.date]),
-      text: `${e[mapping.description] || ''} ${e[mapping.code] || ''} ${e[mapping.result] || ''}`.toLowerCase()
-    }))
-    .filter(x =>
-      x.date &&
-      (!rule ||
-        ((Date.now() - x.date.getTime()) <=
-          ((rule.lookbackDays || 365) * 86400000))) &&
-      (rule
-        ? rule.evidenceTerms.some((t: string) =>
-            x.text.includes(t.toLowerCase())
-          )
-        : false)
-    )
-    .sort((a, b) => b.date!.getTime() - a.date!.getTime());
-}
 
 function App() {
   const [payer, setPayer] = useState<Row[]>([]),
@@ -116,7 +49,9 @@ function App() {
   }
   const autoMap = (headers: string[]) => {
     const pick = (patterns: string[]) =>
-      headers.find((h) => patterns.some((p) => norm(h).includes(p))) || "";
+      patterns
+    .map((p) => headers.find((h) => norm(h).includes(p)))
+    .find((h) => h !== undefined) || "";
     return {
       name: pick(["membername", "patientname", "name"]),
       dob: pick(["dob", "dateofbirth", "birth"]),
@@ -130,7 +65,7 @@ function App() {
         "exam",
         "measure",
       ]),
-      date: pick(["date", "servicedate", "performed", "resultdate"]),
+      date: pick(["servicedate", "date", "performed", "resultdate"]),
       code: pick(["code", "cpt", "hcpcs", "icd"]),
       result: pick(["result", "value", "finding"]),
     };
@@ -197,31 +132,18 @@ function App() {
             p[payerHeaders.find((h) => norm(h).includes("provider")) || ""],
         };
       const evid = findEvidence(emr, pname, mapping, rule);
-      const found = evid[0];
-      if (found) {
-        const note = (
-          rule.noteTemplate || `${measure} completed {date}`
-        ).replace("{date}", fmt(found.date!));
-        return {
-          sourceIndex: payer.indexOf(p),
-          name: p[nameKey || ""],
-          dob: p[dobKey || ""],
-          measure,
-          status: "Closed",
-          notes: note,
-          provider:
-            p[payerHeaders.find((h) => norm(h).includes("provider")) || ""],
-        };
-      }
+      const evaluation = evaluateEvidence(evid, measure, rule);
+
       return {
         sourceIndex: payer.indexOf(p),
-        name: p[nameKey || ""],
-        dob: p[dobKey || ""],
+        name: p[nameKey || ''],
+        dob: p[dobKey || ''],
         measure,
-        status: "Open",
-        notes: "Order needed",
-        provider:
-          p[payerHeaders.find((h) => norm(h).includes("provider")) || ""],
+        status: evaluation.status,
+        notes: evaluation.notes,
+        provider: p[
+          payerHeaders.find(h => norm(h).includes('provider')) || ''
+        ]
       };
     });
     setResults(out);
@@ -352,7 +274,15 @@ function App() {
             <div className="mapping">
               {Object.keys(mapping).map((k) => (
                 <label key={k}>
-                  {k === 'date' ? 'Service Date' : k}
+                  {{
+                    name: 'Patient Name',
+                    dob: 'Date of Birth',
+                    provider: 'Provider',
+                    description: 'Clinical Description',
+                    date: 'Service Date',
+                    code: 'CPT Code',
+                    result: 'Result'
+                  }[k] || k}
                   <select
                     value={mapping[k]}
                     onChange={(e) =>
