@@ -8,7 +8,9 @@
     "build": "tsc -p tsconfig.main.json && vite build",
     "start": "electron . --dev",
     "dist": "npm run build && electron-builder",
-    "test": "npm run build"
+    "test": "npm run build",
+    "test:unit": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
@@ -27,6 +29,7 @@
     "electron-builder": "latest",
     "typescript": "latest",
     "vite": "latest",
+    "vitest": "^4.1.11",
     "wait-on": "latest"
   },
   "build": {

@@ -17,8 +17,8 @@ export function findMatchingPatient(
 
     return (
       emrName === payerName &&
-      (!payerDob ||
-        !emrDob ||
+      (payerDob !== null &&
+        emrDob !== null &&
         emrDob.toDateString() === payerDob.toDateString())
     );
   });
